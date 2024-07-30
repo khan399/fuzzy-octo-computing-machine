@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Gateway Data Fetch</title>
+    <title>Payment with Tamara</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,112 +13,136 @@
         h1 {
             color: #333;
         }
-        #status {
+        #payment-container {
             margin-top: 20px;
-            color: #666;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
 <body>
-    <h1>Fetch Data from Lightspeed Retail (X-Series)</h1>
-    <p id="status">Initializing...</p>
+    <h1>Processing Payment with Tamara</h1>
+    <div id="payment-container">
+        <p id="payment-status">Initializing payment...</p>
+        <!-- Table for displaying parsed data -->
+        <table id="parsed-data-table">
+            <caption>Parsed Data</caption>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody id="parsed-data-body">
+                <!-- Parsed data will be inserted here -->
+            </tbody>
+        </table>
+
+        <!-- Table for displaying payment response -->
+        <table id="payment-response-table">
+            <caption>Payment Response</caption>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody id="payment-response-body">
+                <!-- Payment response will be inserted here -->
+            </tbody>
+        </table>
+    </div>
 
     <script>
-        // Extract parameters from the URL
         const urlParams = new URLSearchParams(window.location.search);
         const origin = urlParams.get('origin');
         const amount = parseFloat(urlParams.get('amount'));
         const registerId = urlParams.get('register_id');
 
-        // Function to send a message to the parent window
         function sendMessageToParent(message) {
-            console.log('Sending message to parent:', message, 'Origin:', origin);
             window.parent.postMessage(JSON.stringify(message), origin);
         }
 
-        // Function to map Lightspeed data to Tamara format
-        function mapDataToTamara(lightspeedData) {
-            const mappedData = {
-                total_amount: {
-                    amount: parseFloat(lightspeedData.payment.amount),
-                    currency: "SAR"
-                },
-                phone_number: "534274516", // Static value
-                email: "customer@emailhere.com", // Static value
-                order_reference_id: lightspeedData.register_sale.id,
-                order_number: lightspeedData.register_sale.client_sale_id,
-                items: lightspeedData.register_sale.line_items.map(item => ({
-                    name: item.name,
-                    type: "Digital", // Static value
-                    reference_id: item.product_id,
-                    sku: item.sku,
-                    quantity: parseInt(item.quantity),
-                    discount_amount: {
-                        amount: parseFloat(item.discount),
-                        currency: "SAR"
-                    },
-                    tax_amount: {
-                        amount: parseFloat(item.unit_tax),
-                        currency: "SAR"
-                    },
-                    unit_price: {
-                        amount: parseFloat(item.unit_price),
-                        currency: "SAR"
-                    },
-                    total_amount: {
-                        amount: parseFloat(item.unit_price) + parseFloat(item.unit_tax),
-                        currency: "SAR"
-                    }
-                })),
-                locale: "ar_SA", // Static value
-                payment_type: "PAY_BY_INSTALMENTS", // Static value
-                expiry_time: 15, // Static value
-                additional_data: {
-                    store_code: "Branch A" // Static value
-                }
-            };
-            return mappedData;
+        function updatePaymentStatus(message) {
+            const statusElement = document.getElementById('payment-status');
+            statusElement.textContent = message;
         }
 
-        // Function to send data to Tamara
-        function sendToTamara(mappedData) {
-            fetch('https://api-sandbox.tamara.co/checkout/in-store-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhY2NvdW50SWQiOiJlMTc1MzQwOC03MjdlLTRjNTEtYmM2OS1lN2M0ZTM2NjkyNjYiLCJ0eXBlIjoibWVyY2hhbnQiLCJzYWx0IjoiMDIwMDJjODZiN2RhNGQzMGY4OWI1ZDgyZGUwNzM0YTkiLCJyb2xlcyI6WyJST0xFX01FUkNIQU5UIl0sImlhdCI6MTcwMjkwNjQ2NSwiaXNzIjoiVGFtYXJhIn0.CgFLVukGBCBILSNCKNp27ewFs_rF2-Wjh7bi2NVJwvMqJRR1u8tirxLR-4QTxP3dE9Qd7pZTk-CGQB8KF-wn1dhaHz-Oh8x5zlELlP95e_uPvPrwHkRtRqkagw7G30WDMwMIdDSA9LFFHq4ilPXi8miR4ncCwUy0fp5OZ9CO9KbEFW17c448LCc7An7bSxilNOlrOwdOcUgiovRrXtMmnFoamcmHXoJpmXTxxpNjspiGGSNhZZA8-PP7gNna1kXMeR-FTGAdL2Qw4y_wK-wY3DcfDSRHREnLjyiJWq-LIRWhg8Sb15IcXy3eAVtvMf7HajESvsl3NSnjQ24gRrot9w'  // Replace with your actual Tamara API key
-                },
-                body: JSON.stringify(mappedData)
-            })
-            .then(response => response.json())
-            .then(data => console.log('Success:', data))
-            .catch(error => console.error('Error:', error));
-        }
-
-        // Event listener to handle messages from the parent window
         function handleResponse(event) {
-            console.log('Received message:', event);
             if (event.origin === origin) {
                 const data = JSON.parse(event.data);
-                console.log('Parsed data:', data);
+                console.log('Received message from parent:', data);
 
-                // Display data in the console
                 if (data.step === 'DATA' && data.success) {
-                    console.log('Sale Data:', data.register_sale);
+                    // Display parsed data in table format
+                    const parsedDataTableBody = document.getElementById('parsed-data-body');
+                    parsedDataTableBody.innerHTML = '';
+                    for (const [key, value] of Object.entries(data)) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${key}</td><td>${value}</td>`;
+                        parsedDataTableBody.appendChild(row);
+                    }
 
-                    // Map Lightspeed data to Tamara format
-                    const mappedData = mapDataToTamara(data);
-                    console.log('Mapped Data to Tamara:', mappedData);
-
-                    // Send the mapped data to Tamara
-                    sendToTamara(mappedData);
+                    // Proceed with payment processing
+                    processPayment(data.register_sale);
                 }
-            } else {
-                console.warn('Origin mismatch:', event.origin, origin);
             }
         }
 
-        // Initialize and request data from Lightspeed Retail (X-Series)
+        async function processPayment(saleData) {
+            try {
+                // Simulate payment processing with Tamara
+                const response = await fetch('https://api.tamara.co/v1/payments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer YOUR_API_KEY'  // Replace with your actual Tamara API key
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        currency: 'USD',  // Replace with the appropriate currency
+                        orderReference: registerId,
+                        // Include additional required fields as per Tamara's API documentation
+                    })
+                });
+
+                const paymentData = await response.json();
+                console.log('Payment response data:', paymentData);
+
+                // Display payment response in table format
+                const paymentResponseTableBody = document.getElementById('payment-response-body');
+                paymentResponseTableBody.innerHTML = '';
+                for (const [key, value] of Object.entries(paymentData)) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${key}</td><td>${value}</td>`;
+                    paymentResponseTableBody.appendChild(row);
+                }
+
+                if (response.ok && paymentData.status === 'ACCEPTED') {
+                    updatePaymentStatus('Payment accepted.');
+                    sendMessageToParent({ step: 'ACCEPT', register_id: registerId, amount: amount });
+                } else {
+                    updatePaymentStatus('Payment declined.');
+                    sendMessageToParent({ step: 'DECLINE', register_id: registerId });
+                }
+            } catch (error) {
+                console.error('Payment processing error:', error);
+                updatePaymentStatus('Payment failed due to an error.');
+                sendMessageToParent({ step: 'ERROR', register_id: registerId });
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Listen for messages from the parent window
             window.addEventListener('message', handleResponse, false);
