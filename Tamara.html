@@ -66,7 +66,11 @@
         // Function to send a message to the parent window
         function sendMessageToParent(message) {
             console.log('Sending message to parent:', message, 'Origin:', origin);
-            window.parent.postMessage(JSON.stringify(message), origin);
+            if (window.parent) {
+                window.parent.postMessage(JSON.stringify(message), origin);
+            } else {
+                console.error('Parent window is not available.');
+            }
         }
 
         // Function to map Lightspeed data to Tamara format
@@ -136,8 +140,8 @@
             const container = document.getElementById('parsed-data-table');
             let html = '<h2>Parsed Data</h2>';
 
-            // Line Items
-            if (data.line_items) {
+            // Check if line_items exists and is an array
+            if (Array.isArray(data.line_items)) {
                 html += '<h3>Line Items</h3><table><tr><th>Key</th><th>Value</th></tr>';
                 data.line_items.forEach((item, index) => {
                     html += `<tr><td>Item ${index + 1} Name</td><td>${item.name}</td></tr>`;
@@ -145,19 +149,25 @@
                     html += `<tr><td>Item ${index + 1} Reference ID</td><td>${item.reference_id}</td></tr>`;
                     html += `<tr><td>Item ${index + 1} SKU</td><td>${item.sku}</td></tr>`;
                     html += `<tr><td>Item ${index + 1} Quantity</td><td>${item.quantity}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Discount Amount</td><td>${item.discount_amount.amount} ${item.discount_amount.currency}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Tax Amount</td><td>${item.tax_amount.amount} ${item.tax_amount.currency}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Unit Price</td><td>${item.unit_price.amount} ${item.unit_price.currency}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Total Amount</td><td>${item.total_amount.amount} ${item.total_amount.currency}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Discount Amount</td><td>${item.discount_amount ? item.discount_amount.amount : 'N/A'} ${item.discount_amount ? item.discount_amount.currency : ''}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Tax Amount</td><td>${item.tax_amount ? item.tax_amount.amount : 'N/A'} ${item.tax_amount ? item.tax_amount.currency : ''}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Unit Price</td><td>${item.unit_price ? item.unit_price.amount : 'N/A'} ${item.unit_price ? item.unit_price.currency : ''}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Total Amount</td><td>${item.total_amount ? item.total_amount.amount : 'N/A'} ${item.total_amount ? item.total_amount.currency : ''}</td></tr>`;
                 });
                 html += '</table>';
+            } else {
+                html += '<p>No line items found.</p>';
             }
 
-            // Totals
-            if (data.total_amount) {
+            // Check if totals exists and is an object
+            if (data.totals && typeof data.totals === 'object') {
                 html += '<h3>Totals</h3><table><tr><th>Key</th><th>Value</th></tr>';
-                html += `<tr><td>Total Amount</td><td>${data.total_amount.amount} ${data.total_amount.currency}</td></tr>`;
+                Object.keys(data.totals).forEach(key => {
+                    html += `<tr><td>${key}</td><td>${data.totals[key]}</td></tr>`;
+                });
                 html += '</table>';
+            } else {
+                html += '<p>No totals found.</p>';
             }
 
             container.innerHTML = html;
@@ -166,17 +176,18 @@
         // Function to display success response in a table
         function displaySuccessResponse(data) {
             const container = document.getElementById('success-response-table');
-            let html = '<h2>Success Response</h2><table><tr><th>Key</th><th>Value</th></tr>';
+            let html = '<h2>Success Response</h2>';
 
-            Object.keys(data).forEach(key => {
-                if (typeof data[key] === 'object') {
-                    html += `<tr><td>${key}</td><td>${JSON.stringify(data[key])}</td></tr>`;
-                } else {
+            if (data && typeof data === 'object') {
+                html += '<table><tr><th>Key</th><th>Value</th></tr>';
+                Object.keys(data).forEach(key => {
                     html += `<tr><td>${key}</td><td>${data[key]}</td></tr>`;
-                }
-            });
+                });
+                html += '</table>';
+            } else {
+                html += '<p>No success response data found.</p>';
+            }
 
-            html += '</table>';
             container.innerHTML = html;
         }
 
