@@ -39,19 +39,14 @@
         .hidden {
             display: none;
         }
-        a {
-            display: block;
-            margin-top: 20px;
-            color: #007bff;
-            text-decoration: none;
-        }
     </style>
 </head>
 <body>
     <h1>Fetch Data from Lightspeed Retail (X-Series)</h1>
     <p id="status">Initializing...</p>
     
-    <a id="checkout_deeplink" href="#" target="_blank">Follow the link to complete the purchase.</a>
+    <!-- Removed the hyperlink for checkout_deeplink -->
+    <p id="checkout_deeplink_message"></p>
     
     <div>
         <button id="show-lightspeed">Lightspeed Data</button>
@@ -175,7 +170,6 @@
 
             Object.keys(data).forEach(key => {
                 if (typeof data[key] === 'object') {
-                    html += `<tr><td>${key}</td><td>${JSON.stringify(data[key])}</td
                     html += `<tr><td>${key}</td><td>${JSON.stringify(data[key])}</td></tr>`;
                 } else {
                     html += `<tr><td>${key}</td><td>${data[key]}</td></tr>`;
@@ -193,7 +187,6 @@
                 const data = JSON.parse(event.data);
                 console.log('Parsed data:', data);
 
-                // Display data in the console
                 if (data.step === 'DATA' && data.success) {
                     console.log('Sale Data:', data.register_sale);
 
@@ -203,7 +196,7 @@
 
                     // Set the deeplink dynamically
                     if (data.checkout_deeplink) {
-                        setCheckoutDeeplink(data.checkout_deeplink);
+                        document.getElementById('checkout_deeplink_message').textContent = `Follow the link to complete the purchase: ${data.checkout_deeplink}`;
                     }
 
                     // Display parsed data
