@@ -82,10 +82,11 @@
 
         // Function to send data to Tamara
         function sendToTamara(mappedData) {
-            fetch('https://api-sandbox.tamara.co', {
+            fetch('https://api-sandbox.tamara.co/checkout/in-store-session', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhY2NvdW50SWQiOiJlMTc1MzQwOC03MjdlLTRjNTEtYmM2OS1lN2M0ZTM2NjkyNjYiLCJ0eXBlIjoibWVyY2hhbnQiLCJzYWx0IjoiMDIwMDJjODZiN2RhNGQzMGY4OWI1ZDgyZGUwNzM0YTkiLCJyb2xlcyI6WyJST0xFX01FUkNIQU5UIl0sImlhdCI6MTcwMjkwNjQ2NSwiaXNzIjoiVGFtYXJhIn0.CgFLVukGBCBILSNCKNp27ewFs_rF2-Wjh7bi2NVJwvMqJRR1u8tirxLR-4QTxP3dE9Qd7pZTk-CGQB8KF-wn1dhaHz-Oh8x5zlELlP95e_uPvPrwHkRtRqkagw7G30WDMwMIdDSA9LFFHq4ilPXi8miR4ncCwUy0fp5OZ9CO9KbEFW17c448LCc7An7bSxilNOlrOwdOcUgiovRrXtMmnFoamcmHXoJpmXTxxpNjspiGGSNhZZA8-PP7gNna1kXMeR-FTGAdL2Qw4y_wK-wY3DcfDSRHREnLjyiJWq-LIRWhg8Sb15IcXy3eAVtvMf7HajESvsl3NSnjQ24gRrot9w'  // Replace with your actual Tamara API key
                 },
                 body: JSON.stringify(mappedData)
             })
