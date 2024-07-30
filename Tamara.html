@@ -31,6 +31,7 @@
         const registerId = urlParams.get('register_id');
 
         function sendMessageToParent(message) {
+            console.log('Sending message to parent:', message, 'Origin:', origin);
             window.parent.postMessage(JSON.stringify(message), origin);
         }
 
@@ -40,14 +41,17 @@
         }
 
         function handleResponse(event) {
+            console.log('Received message:', event);
             if (event.origin === origin) {
                 const data = JSON.parse(event.data);
-                console.log('Received message from parent:', data);
+                console.log('Parsed data:', data);
 
                 if (data.step === 'DATA' && data.success) {
                     // Proceed with payment processing
                     processPayment(data.register_sale);
                 }
+            } else {
+                console.warn('Origin mismatch:', event.origin, origin);
             }
         }
 
