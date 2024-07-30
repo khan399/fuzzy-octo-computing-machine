@@ -36,6 +36,64 @@
             window.parent.postMessage(JSON.stringify(message), origin);
         }
 
+        // Function to map Lightspeed data to Tamara format
+        function mapDataToTamara(lightspeedData) {
+            const mappedData = {
+                total_amount: {
+                    amount: parseFloat(lightspeedData.payment.amount),
+                    currency: "SAR"
+                },
+                phone_number: "534274516", // Static value
+                email: "customer@emailhere.com", // Static value
+                order_reference_id: lightspeedData.register_sale.id,
+                order_number: lightspeedData.register_sale.client_sale_id,
+                items: lightspeedData.register_sale.line_items.map(item => ({
+                    name: item.name,
+                    type: "Digital", // Static value
+                    reference_id: item.product_id,
+                    sku: item.sku,
+                    quantity: parseInt(item.quantity),
+                    discount_amount: {
+                        amount: parseFloat(item.discount),
+                        currency: "SAR"
+                    },
+                    tax_amount: {
+                        amount: parseFloat(item.unit_tax),
+                        currency: "SAR"
+                    },
+                    unit_price: {
+                        amount: parseFloat(item.unit_price),
+                        currency: "SAR"
+                    },
+                    total_amount: {
+                        amount: parseFloat(item.unit_price) + parseFloat(item.unit_tax),
+                        currency: "SAR"
+                    }
+                })),
+                locale: "ar_SA", // Static value
+                payment_type: "PAY_BY_INSTALMENTS", // Static value
+                expiry_time: 15, // Static value
+                additional_data: {
+                    store_code: "Branch A" // Static value
+                }
+            };
+            return mappedData;
+        }
+
+        // Function to send data to Tamara
+        function sendToTamara(mappedData) {
+            fetch('https://api-sandbox.tamara.co', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mappedData)
+            })
+            .then(response => response.json())
+            .then(data => console.log('Success:', data))
+            .catch(error => console.error('Error:', error));
+        }
+
         // Event listener to handle messages from the parent window
         function handleResponse(event) {
             console.log('Received message:', event);
@@ -46,6 +104,13 @@
                 // Display data in the console
                 if (data.step === 'DATA' && data.success) {
                     console.log('Sale Data:', data.register_sale);
+
+                    // Map Lightspeed data to Tamara format
+                    const mappedData = mapDataToTamara(data);
+                    console.log('Mapped Data to Tamara:', mappedData);
+
+                    // Send the mapped data to Tamara
+                    sendToTamara(mappedData);
                 }
             } else {
                 console.warn('Origin mismatch:', event.origin, origin);
