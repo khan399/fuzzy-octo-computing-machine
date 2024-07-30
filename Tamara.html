@@ -39,45 +39,45 @@
             statusElement.textContent = message;
         }
 
-        async function processPayment() {
+        function handleResponse(event) {
+            if (event.origin === origin) {
+                const data = JSON.parse(event.data);
+                console.log('Received message from parent:', data);
+
+                if (data.step === 'DATA' && data.success) {
+                    // Proceed with payment processing
+                    processPayment(data.register_sale);
+                }
+            }
+        }
+
+        async function processPayment(saleData) {
             try {
-                // Request additional information from Lightspeed Retail (X-Series)
-                sendMessageToParent({ step: 'DATA' });
-
-                window.addEventListener('message', async function(event) {
-                    if (event.origin === origin) {
-                        const data = JSON.parse(event.data);
-                        console.log('Received message from parent:', data);
-
-                        if (data.step === 'DATA' && data.success) {
-                            // Process payment with Tamara
-                            const response = await fetch('https://api.tamara.co/v1/payments', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer YOUR_API_KEY'  // Replace with your actual Tamara API key
-                                },
-                                body: JSON.stringify({
-                                    amount: amount,
-                                    currency: 'USD',  // Replace with the appropriate currency
-                                    orderReference: registerId,
-                                    // Include additional required fields as per Tamara's API documentation
-                                })
-                            });
-
-                            const paymentData = await response.json();
-                            console.log('Payment response data:', paymentData);
-
-                            if (response.ok && paymentData.status === 'ACCEPTED') {
-                                updatePaymentStatus('Payment accepted.');
-                                sendMessageToParent({ step: 'ACCEPT', register_id: registerId, amount: amount });
-                            } else {
-                                updatePaymentStatus('Payment declined.');
-                                sendMessageToParent({ step: 'DECLINE', register_id: registerId });
-                            }
-                        }
-                    }
+                // Simulate payment processing with Tamara
+                const response = await fetch('https://api.tamara.co/v1/payments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer YOUR_API_KEY'  // Replace with your actual Tamara API key
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        currency: 'USD',  // Replace with the appropriate currency
+                        orderReference: registerId,
+                        // Include additional required fields as per Tamara's API documentation
+                    })
                 });
+
+                const paymentData = await response.json();
+                console.log('Payment response data:', paymentData);
+
+                if (response.ok && paymentData.status === 'ACCEPTED') {
+                    updatePaymentStatus('Payment accepted.');
+                    sendMessageToParent({ step: 'ACCEPT', register_id: registerId, amount: amount });
+                } else {
+                    updatePaymentStatus('Payment declined.');
+                    sendMessageToParent({ step: 'DECLINE', register_id: registerId });
+                }
             } catch (error) {
                 console.error('Payment processing error:', error);
                 updatePaymentStatus('Payment failed due to an error.');
@@ -86,7 +86,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            processPayment();  // Automatically process payment on load
+            // Listen for messages from the parent window
+            window.addEventListener('message', handleResponse, false);
+
+            // Request additional information from Lightspeed Retail (X-Series)
+            sendMessageToParent({ step: 'DATA' });
         });
     </script>
 </body>
