@@ -30,14 +30,30 @@
         th {
             background-color: #f2f2f2;
         }
+        button {
+            margin: 10px 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <h1>Fetch Data from Lightspeed Retail (X-Series)</h1>
     <p id="status">Initializing...</p>
+    
+    <a id="checkout_deeplink" href="#" target="_blank">Checkout Deeplink</a>
+    
+    <div>
+        <button id="show-lightspeed">Lightspeed Data</button>
+        <button id="show-tamara">Tamara Response</button>
+    </div>
 
-    <div id="parsed-data-table"></div>
-    <div id="success-response-table"></div>
+    <div id="parsed-data-table" class="hidden"></div>
+    <div id="success-response-table" class="hidden"></div>
 
     <script>
         // Extract parameters from the URL
@@ -182,6 +198,29 @@
             // Request additional information from Lightspeed Retail (X-Series)
             sendMessageToParent({ step: 'DATA' });
         });
+
+        // Button click handlers
+        document.getElementById('show-lightspeed').addEventListener('click', function() {
+            document.getElementById('parsed-data-table').classList.remove('hidden');
+            document.getElementById('success-response-table').classList.add('hidden');
+        });
+
+        document.getElementById('show-tamara').addEventListener('click', function() {
+            document.getElementById('success-response-table').classList.remove('hidden');
+            document.getElementById('parsed-data-table').classList.add('hidden');
+       
+        });
+
+        // Example: Set the checkout deeplink dynamically
+        function setCheckoutDeeplink(url) {
+            const linkElement = document.getElementById('checkout_deeplink');
+            linkElement.href = url;
+            linkElement.textContent = 'Checkout Deeplink';
+        }
+
+        // Set the deeplink with a placeholder URL (replace with actual URL if needed)
+        setCheckoutDeeplink('https://example.com/checkout');
+
     </script>
 </body>
 </html>
