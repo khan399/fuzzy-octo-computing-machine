@@ -140,34 +140,56 @@
             const container = document.getElementById('parsed-data-table');
             let html = '<h2>Parsed Data</h2>';
 
-            // Check if line_items exists and is an array
-            if (Array.isArray(data.line_items)) {
-                html += '<h3>Line Items</h3><table><tr><th>Key</th><th>Value</th></tr>';
-                data.line_items.forEach((item, index) => {
-                    html += `<tr><td>Item ${index + 1} Name</td><td>${item.name}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Type</td><td>${item.type}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Reference ID</td><td>${item.reference_id}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} SKU</td><td>${item.sku}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Quantity</td><td>${item.quantity}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Discount Amount</td><td>${item.discount_amount ? item.discount_amount.amount : 'N/A'} ${item.discount_amount ? item.discount_amount.currency : ''}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Tax Amount</td><td>${item.tax_amount ? item.tax_amount.amount : 'N/A'} ${item.tax_amount ? item.tax_amount.currency : ''}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Unit Price</td><td>${item.unit_price ? item.unit_price.amount : 'N/A'} ${item.unit_price ? item.unit_price.currency : ''}</td></tr>`;
-                    html += `<tr><td>Item ${index + 1} Total Amount</td><td>${item.total_amount ? item.total_amount.amount : 'N/A'} ${item.total_amount ? item.total_amount.currency : ''}</td></tr>`;
-                });
-                html += '</table>';
-            } else {
-                html += '<p>No line items found.</p>';
-            }
+            if (data) {
+                html += '<table><tr><th>Key</th><th>Value</th></tr>';
 
-            // Check if totals exists and is an object
-            if (data.totals && typeof data.totals === 'object') {
-                html += '<h3>Totals</h3><table><tr><th>Key</th><th>Value</th></tr>';
-                Object.keys(data.totals).forEach(key => {
-                    html += `<tr><td>${key}</td><td>${data.totals[key]}</td></tr>`;
-                });
+                // Display payment details
+                if (data.payment) {
+                    html += `<tr><td>Payment Amount</td><td>${data.payment.amount || 'N/A'}</td></tr>`;
+                }
+                
+                // Display register_sale details
+                if (data.register_sale) {
+                    html += `<tr><td>Register Sale ID</td><td>${data.register_sale.id || 'N/A'}</td></tr>`;
+                    html += `<tr><td>Client Sale ID</td><td>${data.register_sale.client_sale_id || 'N/A'}</td></tr>`;
+                }
+                
+                // Display additional fields
+                html += `<tr><td>Client ID</td><td>${data.client_id || 'N/A'}</td></tr>`;
+                html += `<tr><td>Web Register</td><td>${data.web_register || 'N/A'}</td></tr>`;
+                html += `<tr><td>Client Sale ID</td><td>${data.client_sale_id || 'N/A'}</td></tr>`;
+
+                // Display line_items
+                if (Array.isArray(data.register_sale.line_items)) {
+                    html += '<tr><td colspan="2"><h3>Line Items</h3></td></tr>';
+                    data.register_sale.line_items.forEach((item, index) => {
+                        html += `<tr><td>Item ${index + 1} Name</td><td>${item.name || 'N/A'}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Type</td><td>${item.type || 'N/A'}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Reference ID</td><td>${item.reference_id || 'N/A'}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} SKU</td><td>${item.sku || 'N/A'}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Quantity</td><td>${item.quantity || 'N/A'}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Discount Amount</td><td>${item.discount_amount ? item.discount_amount.amount : 'N/A'} ${item.discount_amount ? item.discount_amount.currency : ''}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Tax Amount</td><td>${item.tax_amount ? item.tax_amount.amount : 'N/A'} ${item.tax_amount ? item.tax_amount.currency : ''}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Unit Price</td><td>${item.unit_price ? item.unit_price.amount : 'N/A'} ${item.unit_price ? item.unit_price.currency : ''}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Total Amount</td><td>${item.total_amount ? item.total_amount.amount : 'N/A'} ${item.total_amount ? item.total_amount.currency : ''}</td></tr>`;
+                    });
+                } else {
+                    html += '<tr><td colspan="2">No line items found.</td></tr>';
+                }
+
+                // Display totals
+                if (data.totals && typeof data.totals === 'object') {
+                    html += '<tr><td colspan="2"><h3>Totals</h3></td></tr>';
+                    Object.keys(data.totals).forEach(key => {
+                        html += `<tr><td>${key}</td><td>${data.totals[key]}</td></tr>`;
+                    });
+                } else {
+                    html += '<tr><td colspan="2">No totals found.</td></tr>';
+                }
+
                 html += '</table>';
             } else {
-                html += '<p>No totals found.</p>';
+                html += '<p>No data found.</p>';
             }
 
             container.innerHTML = html;
@@ -211,7 +233,7 @@
                     }
 
                     // Display parsed data
-                    displayParsedData(data.register_sale);
+                    displayParsedData(data);
 
                     // Send the mapped data to Tamara
                     sendToTamara(mappedData);
