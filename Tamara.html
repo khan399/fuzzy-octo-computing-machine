@@ -39,13 +39,19 @@
         .hidden {
             display: none;
         }
+        a {
+            display: block;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
     <h1>Fetch Data from Lightspeed Retail (X-Series)</h1>
     <p id="status">Initializing...</p>
     
-    <a id="checkout_deeplink" href="#" target="_blank">Checkout Deeplink</a>
+    <a id="checkout_deeplink" href="#" target="_blank">Follow the link to complete the purchase.</a>
     
     <div>
         <button id="show-lightspeed">Lightspeed Data</button>
@@ -133,17 +139,32 @@
         // Function to display parsed data in a table
         function displayParsedData(data) {
             const container = document.getElementById('parsed-data-table');
-            let html = '<h2>Parsed Data</h2><table><tr><th>Key</th><th>Value</th></tr>';
+            let html = '<h2>Parsed Data</h2>';
 
-            Object.keys(data).forEach(key => {
-                if (typeof data[key] === 'object') {
-                    html += `<tr><td>${key}</td><td>${JSON.stringify(data[key])}</td></tr>`;
-                } else {
-                    html += `<tr><td>${key}</td><td>${data[key]}</td></tr>`;
-                }
-            });
+            // Line Items
+            if (data.line_items) {
+                html += '<h3>Line Items</h3><table><tr><th>Key</th><th>Value</th></tr>';
+                data.line_items.forEach((item, index) => {
+                    html += `<tr><td>Item ${index + 1} Name</td><td>${item.name}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Type</td><td>${item.type}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Reference ID</td><td>${item.reference_id}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} SKU</td><td>${item.sku}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Quantity</td><td>${item.quantity}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Discount Amount</td><td>${item.discount_amount.amount} ${item.discount_amount.currency}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Tax Amount</td><td>${item.tax_amount.amount} ${item.tax_amount.currency}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Unit Price</td><td>${item.unit_price.amount} ${item.unit_price.currency}</td></tr>`;
+                    html += `<tr><td>Item ${index + 1} Total Amount</td><td>${item.total_amount.amount} ${item.total_amount.currency}</td></tr>`;
+                });
+                html += '</table>';
+            }
 
-            html += '</table>';
+            // Totals
+            if (data.total_amount) {
+                html += '<h3>Totals</h3><table><tr><th>Key</th><th>Value</th></tr>';
+                html += `<tr><td>Total Amount</td><td>${data.total_amount.amount} ${data.total_amount.currency}</td></tr>`;
+                html += '</table>';
+            }
+
             container.innerHTML = html;
         }
 
@@ -154,6 +175,7 @@
 
             Object.keys(data).forEach(key => {
                 if (typeof data[key] === 'object') {
+                    html += `<tr><td>${key}</td><td>${JSON.stringify(data[key])}</td
                     html += `<tr><td>${key}</td><td>${JSON.stringify(data[key])}</td></tr>`;
                 } else {
                     html += `<tr><td>${key}</td><td>${data[key]}</td></tr>`;
@@ -175,12 +197,17 @@
                 if (data.step === 'DATA' && data.success) {
                     console.log('Sale Data:', data.register_sale);
 
-                    // Display parsed data in table format
-                    displayParsedData(data.register_sale);
-
                     // Map Lightspeed data to Tamara format
                     const mappedData = mapDataToTamara(data);
                     console.log('Mapped Data to Tamara:', mappedData);
+
+                    // Set the deeplink dynamically
+                    if (data.checkout_deeplink) {
+                        setCheckoutDeeplink(data.checkout_deeplink);
+                    }
+
+                    // Display parsed data
+                    displayParsedData(data.register_sale);
 
                     // Send the mapped data to Tamara
                     sendToTamara(mappedData);
@@ -197,30 +224,18 @@
 
             // Request additional information from Lightspeed Retail (X-Series)
             sendMessageToParent({ step: 'DATA' });
+
+            // Add event listeners for buttons
+            document.getElementById('show-lightspeed').addEventListener('click', function() {
+                document.getElementById('parsed-data-table').classList.remove('hidden');
+                document.getElementById('success-response-table').classList.add('hidden');
+            });
+
+            document.getElementById('show-tamara').addEventListener('click', function() {
+                document.getElementById('success-response-table').classList.remove('hidden');
+                document.getElementById('parsed-data-table').classList.add('hidden');
+            });
         });
-
-        // Button click handlers
-        document.getElementById('show-lightspeed').addEventListener('click', function() {
-            document.getElementById('parsed-data-table').classList.remove('hidden');
-            document.getElementById('success-response-table').classList.add('hidden');
-        });
-
-        document.getElementById('show-tamara').addEventListener('click', function() {
-            document.getElementById('success-response-table').classList.remove('hidden');
-            document.getElementById('parsed-data-table').classList.add('hidden');
-       
-        });
-
-        // Example: Set the checkout deeplink dynamically
-        function setCheckoutDeeplink(url) {
-            const linkElement = document.getElementById('checkout_deeplink');
-            linkElement.href = url;
-            linkElement.textContent = 'Checkout Deeplink';
-        }
-
-        // Set the deeplink with a placeholder URL (replace with actual URL if needed)
-        setCheckoutDeeplink('https://example.com/checkout');
-
     </script>
 </body>
 </html>
