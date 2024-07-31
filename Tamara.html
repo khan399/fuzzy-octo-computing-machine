@@ -20,6 +20,17 @@
         .hidden {
             display: none;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -27,7 +38,7 @@
     <p id="status">Initializing...</p>
     <p id="checkout_deeplink_message"></p>
     <button id="show-lightspeed">Show Parsed Data</button>
-    <button id="show-tamara">Show Success Response</button>
+    <button id="show-tamara">Show Tamara Response</button>
     <div id="parsed-data-table" class="hidden"></div>
     <div id="success-response-table" class="hidden"></div>
 
@@ -124,7 +135,7 @@
                 } else {
                     console.error('Amount mismatch or incorrect event type.');
                 }
-            }, 600000); // Wait for 10 minutes (600000 milliseconds)
+            }, 10000); // Wait for 10 seconds for testing (10000 milliseconds)
         }
 
         // Function to close the check in Lightspeed
