@@ -17,25 +17,6 @@
             margin-top: 20px;
             color: #666;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        button {
-            margin: 10px 5px;
-            padding: 10px 15px;
-            font-size: 16px;
-            cursor: pointer;
-        }
         .hidden {
             display: none;
         }
@@ -44,15 +25,9 @@
 <body>
     <h1>Fetch Data from Lightspeed Retail (X-Series)</h1>
     <p id="status">Initializing...</p>
-    
-    <!-- Removed the hyperlink for checkout_deeplink -->
     <p id="checkout_deeplink_message"></p>
-    
-    <div>
-        <button id="show-lightspeed">Lightspeed Data</button>
-        <button id="show-tamara">Tamara Response</button>
-    </div>
-
+    <button id="show-lightspeed">Show Parsed Data</button>
+    <button id="show-tamara">Show Success Response</button>
     <div id="parsed-data-table" class="hidden"></div>
     <div id="success-response-table" class="hidden"></div>
 
@@ -66,11 +41,7 @@
         // Function to send a message to the parent window
         function sendMessageToParent(message) {
             console.log('Sending message to parent:', message, 'Origin:', origin);
-            if (window.parent) {
-                window.parent.postMessage(JSON.stringify(message), origin);
-            } else {
-                console.error('Parent window is not available.');
-            }
+            window.parent.postMessage(JSON.stringify(message), origin);
         }
 
         // Function to map Lightspeed data to Tamara format
@@ -130,9 +101,44 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-                displaySuccessResponse(data);
+                sendToWebhook(data);
             })
             .catch(error => console.error('Error:', error));
+        }
+
+        // Function to send Tamara response to webhook
+        function sendToWebhook(tamaraData) {
+            fetch('https://webhook.site/5e00543e-76e9-457b-a7ab-aa72d9bffbf3', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(tamaraData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Webhook Success:', data);
+                if (data.event_type === 'order_captured' && data.total_amount.amount === amount) {
+                    closeCheckInLightspeed();
+                    sendToTerminal('Payment sent, terminal checks with the processor, and my gateway gets a response of "ACCEPTED".');
+                    sendMessageToParent({ step: 'ACCEPT' });
+                } else {
+                    console.error('Amount mismatch or incorrect event type.');
+                }
+            })
+            .catch(error => console.error('Webhook Error:', error));
+        }
+
+        // Function to close the check in Lightspeed
+        function closeCheckInLightspeed() {
+            console.log('Closing check in Lightspeed.');
+            // Add your logic here to close the check in Lightspeed
+        }
+
+        // Function to send message to terminal
+        function sendToTerminal(message) {
+            console.log('Sending to terminal:', message);
+            // Add your logic here to send a message to the terminal
         }
 
         // Function to display parsed data in a table
@@ -140,74 +146,58 @@
             const container = document.getElementById('parsed-data-table');
             let html = '<h2>Parsed Data</h2>';
 
-            if (data) {
-                html += '<table><tr><th>Key</th><th>Value</th></tr>';
+            if (data && typeof data === 'object') {
+                html += '<table>';
+                html += `<tr><td>Payment Amount</td><td>${data.payment ? data.payment.amount : 'N/A'}</td></tr>`;
+                html += `<tr><td>Register Sale ID</td><td>${data.register_sale ? data.register_sale.id : 'N/A'}</td></tr>`;
+                html += `<tr><td>Client ID</td><td>${data.client_id ? data.client_id : 'N/A'}</td></tr>`;
+                html += `<tr><td>Web Register</td><td>${data.web_register ? data.web_register : 'N/A'}</td></tr>`;
+                html += `<tr><td>Client Sale ID</td><td>${data.client_sale_id ? data.client_sale_id : 'N/A'}</td></tr>`;
 
-                // Display payment details
-                if (data.payment) {
-                    html += `<tr><td>Payment Amount</td><td>${data.payment.amount || 'N/A'}</td></tr>`;
-                }
-                
-                // Display register_sale details
-                if (data.register_sale) {
-                    html += `<tr><td>Register Sale ID</td><td>${data.register_sale.id || 'N/A'}</td></tr>`;
-                    html += `<tr><td>Client Sale ID</td><td>${data.register_sale.client_sale_id || 'N/A'}</td></tr>`;
-                }
-                
-                // Display additional fields
-                html += `<tr><td>Client ID</td><td>${data.client_id || 'N/A'}</td></tr>`;
-                html += `<tr><td>Web Register</td><td>${data.web_register || 'N/A'}</td></tr>`;
-                html += `<tr><td>Client Sale ID</td><td>${data.client_sale_id || 'N/A'}</td></tr>`;
-
-                // Display line_items
-                if (Array.isArray(data.register_sale.line_items)) {
+                // Display line items
+                if (data.register_sale && data.register_sale.line_items && data.register_sale.line_items.length > 0) {
                     html += '<tr><td colspan="2"><h3>Line Items</h3></td></tr>';
                     data.register_sale.line_items.forEach((item, index) => {
-                        html += `<tr><td>Item ${index + 1} Name</td><td>${item.name || 'N/A'}</td></tr>`;
-                        html += `<tr><td>Item ${index + 1} Type</td><td>${item.type || 'N/A'}</td></tr>`;
-                        html += `<tr><td>Item ${index + 1} Reference ID</td><td>${item.reference_id || 'N/A'}</td></tr>`;
-                        html += `<tr><td>Item ${index + 1} SKU</td><td>${item.sku || 'N/A'}</td></tr>`;
-                        html += `<tr><td>Item ${index + 1} Quantity</td><td>${item.quantity || 'N/A'}</td></tr>`;
-                        html += `<tr><td>Item ${index + 1} Discount Amount</td><td>${item.discount_amount ? item.discount_amount.amount : 'N/A'} ${item.discount_amount ? item.discount_amount.currency : ''}</td></tr>`;
-                        html += `<tr><td>Item ${index + 1} Tax Amount</td><td>${item.tax_amount ? item.tax_amount.amount : 'N/A'} ${item.tax_amount ? item.tax_amount.currency : ''}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Name</td><td>${item.name}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Quantity</td><td>${item.quantity}</td></tr>`;
                         html += `<tr><td>Item ${index + 1} Unit Price</td><td>${item.unit_price ? item.unit_price.amount : 'N/A'} ${item.unit_price ? item.unit_price.currency : ''}</td></tr>`;
                         html += `<tr><td>Item ${index + 1} Total Amount</td><td>${item.total_amount ? item.total_amount.amount : 'N/A'} ${item.total_amount ? item.total_amount.currency : ''}</td></tr>`;
                     });
                 } else {
-                    html += '<tr><td colspan="2">No line items found.</td></tr>';
+                    html += '<tr><td colspan="2">No line items available</td></tr>';
                 }
 
                 // Display totals
                 if (data.totals && typeof data.totals === 'object') {
                     html += '<tr><td colspan="2"><h3>Totals</h3></td></tr>';
-                    Object.keys(data.totals).forEach(key => {
-                        html += `<tr><td>${key}</td><td>${data.totals[key]}</td></tr>`;
-                    });
+                    for (const [key, value] of Object.entries(data.totals)) {
+                        html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                    }
                 } else {
-                    html += '<tr><td colspan="2">No totals found.</td></tr>';
+                    html += '<tr><td colspan="2">No totals available</td></tr>';
                 }
 
                 html += '</table>';
             } else {
-                html += '<p>No data found.</p>';
+                html += '<p>No data available</p>';
             }
 
             container.innerHTML = html;
         }
 
-        // Function to display success response in a table
+        // Function to display Tamara success response in a table
         function displaySuccessResponse(data) {
             const container = document.getElementById('success-response-table');
             let html = '<h2>Success Response</h2>';
 
             if (data && typeof data === 'object') {
-                html += '<table><tr><th>Key</th><th>Value</th></tr>';
-                Object.keys(data).forEach(key => {
-                    html += `<tr><td>${key}</td><td>${data[key]}</td></tr>`;
-                });
+                html += '<table>';
+                for (const [key, value] of Object.entries(data)) {
+                    html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                }
                 html += '</table>';
             } else {
-                html += '<p>No success response data found.</p>';
+                html += '<p>No data available</p>';
             }
 
             container.innerHTML = html;
@@ -220,20 +210,16 @@
                 const data = JSON.parse(event.data);
                 console.log('Parsed data:', data);
 
+                // Display data in the console
                 if (data.step === 'DATA' && data.success) {
                     console.log('Sale Data:', data.register_sale);
+
+                    // Display the parsed data
+                    displayParsedData(data);
 
                     // Map Lightspeed data to Tamara format
                     const mappedData = mapDataToTamara(data);
                     console.log('Mapped Data to Tamara:', mappedData);
-
-                    // Set the deeplink dynamically
-                    if (data.checkout_deeplink) {
-                        document.getElementById('checkout_deeplink_message').textContent = `Follow the link to complete the purchase: ${data.checkout_deeplink}`;
-                    }
-
-                    // Display parsed data
-                    displayParsedData(data);
 
                     // Send the mapped data to Tamara
                     sendToTamara(mappedData);
@@ -251,7 +237,7 @@
             // Request additional information from Lightspeed Retail (X-Series)
             sendMessageToParent({ step: 'DATA' });
 
-            // Add event listeners for buttons
+            // Event listeners for buttons
             document.getElementById('show-lightspeed').addEventListener('click', function() {
                 document.getElementById('parsed-data-table').classList.remove('hidden');
                 document.getElementById('success-response-table').classList.add('hidden');
