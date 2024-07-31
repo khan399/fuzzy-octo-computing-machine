@@ -1,4 +1,3 @@
-//Working Code Till paymnet Received
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,12 +20,50 @@
         .hidden {
             display: none;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .button-link {
+            display: inline-block;
+            text-decoration: none;
+            background-color: #008CBA;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .button-link:hover {
+            background-color: #007bb5;
+        }
     </style>
 </head>
 <body>
     <h1>Fetch Data from Lightspeed Retail (X-Series)</h1>
     <p id="status">Initializing...</p>
-    <p id="checkout_deeplink_message"></p>
     <button id="show-lightspeed">Show Parsed Data</button>
     <button id="show-tamara">Show Success Response</button>
     <div id="parsed-data-table" class="hidden"></div>
@@ -103,6 +140,7 @@
             .then(data => {
                 console.log('Success:', data);
                 waitForWebhook(data);
+                displaySuccessResponse(data); // Display success response
             })
             .catch(error => console.error('Error:', error));
         }
@@ -193,7 +231,11 @@
             if (data && typeof data === 'object') {
                 html += '<table>';
                 for (const [key, value] of Object.entries(data)) {
-                    html += `<tr><td>${key}</td><td><a href="${value}">${value}</a></td></tr>`;
+                    if (key === 'checkout_deeplink') {
+                        html += `<tr><td>${key}</td><td><a class="button-link" href="${value}" target="_blank">Follow the link to complete the purchase</a></td></tr>`;
+                    } else {
+                        html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                    }
                 }
                 html += '</table>';
             } else {
