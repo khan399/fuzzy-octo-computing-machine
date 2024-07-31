@@ -147,25 +147,28 @@
 
         // Function to wait for webhook response
         function waitForWebhook(tamaraData) {
-            setTimeout(() => {
-                // Simulating the webhook response
-                const webhookResponse = {
-                    event_type: 'order_captured',
-                    total_amount: { amount: amount } // Simulate the amount matching
-                };
+            console.log('Waiting for webhook response...');
+            
+            const webhookEventSource = new EventSource('https://webhook.site/5e00543e-76e9-457b-a7ab-aa72d9bffbf3');
 
-                // Log the webhook response as a table
-                console.log('Webhook Response:');
+            webhookEventSource.onmessage = function(event) {
+                const webhookResponse = JSON.parse(event.data);
+                console.log('Webhook Response:', webhookResponse);
                 console.table(webhookResponse);
 
                 if (webhookResponse.event_type === 'order_captured' && parseFloat(webhookResponse.total_amount.amount) === amount) {
                     closeCheckInLightspeed();
                     sendToTerminal('Payment sent, terminal checks with the processor, and my gateway gets a response of "ACCEPTED".');
                     sendMessageToParent({ step: 'ACCEPT' });
+                    webhookEventSource.close();
                 } else {
                     console.error('Amount mismatch or incorrect event type.');
                 }
-            }, 120000); // Wait for 10 minutes (600000 milliseconds)
+            };
+
+            webhookEventSource.onerror = function(error) {
+                console.error('Error in receiving webhook:', error);
+            };
         }
 
         // Function to close the check in Lightspeed
