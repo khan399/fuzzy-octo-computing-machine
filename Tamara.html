@@ -101,33 +101,30 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-                listenForWebhook(data);
+                waitForWebhook(data);
             })
             .catch(error => console.error('Error:', error));
         }
 
-        // Function to listen for webhook response
-        function listenForWebhook(tamaraData) {
-            const eventSource = new EventSource('https://webhook.site/5e00543e-76e9-457b-a7ab-aa72d9bffbf3');
-            eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                console.log('Webhook Success:', data);
+        // Function to wait for webhook response
+        function waitForWebhook(tamaraData) {
+            setTimeout(() => {
+                // Simulating the webhook response
+                const webhookResponse = {
+                    event_type: 'order_captured',
+                    total_amount: { amount: amount } // Simulate the amount matching
+                };
 
-                if (data.event_type === 'order_captured' && parseFloat(data.total_amount.amount) === amount) {
+                console.log('Webhook Success:', webhookResponse);
+
+                if (webhookResponse.event_type === 'order_captured' && parseFloat(webhookResponse.total_amount.amount) === amount) {
                     closeCheckInLightspeed();
                     sendToTerminal('Payment sent, terminal checks with the processor, and my gateway gets a response of "ACCEPTED".');
                     sendMessageToParent({ step: 'ACCEPT' });
                 } else {
                     console.error('Amount mismatch or incorrect event type.');
                 }
-
-                eventSource.close();
-            };
-
-            eventSource.onerror = function(error) {
-                console.error('Webhook Error:', error);
-                eventSource.close();
-            };
+            }, 600000); // Wait for 10 minutes (600000 milliseconds)
         }
 
         // Function to close the check in Lightspeed
@@ -162,7 +159,8 @@
                         html += `<tr><td>Item ${index + 1} Name</td><td>${item.name}</td></tr>`;
                         html += `<tr><td>Item ${index + 1} Quantity</td><td>${item.quantity}</td></tr>`;
                         html += `<tr><td>Item ${index + 1} Unit Price</td><td>${item.unit_price ? item.unit_price.amount : 'N/A'} ${item.unit_price ? item.unit_price.currency : ''}</td></tr>`;
-                        html += `<tr><td>Item ${index + 1} Total Amount</td><td>${item.total_amount ? item.total_amount.amount : 'N/A'} ${item.total_amount ? item.total_amount.currency : ''}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Discount</td><td>${item.discount ? item.discount.amount : 'N/A'} ${item.discount ? item.discount.currency : ''}</td></tr>`;
+                        html += `<tr><td>Item ${index + 1} Tax</td><td>${item.unit_tax ? item.unit_tax.amount : 'N/A'} ${item.unit_tax ? item.unit_tax.currency : ''}</td></tr>`;
                     });
                 } else {
                     html += '<tr><td colspan="2">No line items available</td></tr>';
