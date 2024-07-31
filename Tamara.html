@@ -1,3 +1,4 @@
+//Working Code Till paymnet Received
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,17 +21,6 @@
         .hidden {
             display: none;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #ccc;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
     </style>
 </head>
 <body>
@@ -38,7 +28,7 @@
     <p id="status">Initializing...</p>
     <p id="checkout_deeplink_message"></p>
     <button id="show-lightspeed">Show Parsed Data</button>
-    <button id="show-tamara">Show Tamara Response</button>
+    <button id="show-tamara">Show Success Response</button>
     <div id="parsed-data-table" class="hidden"></div>
     <div id="success-response-table" class="hidden"></div>
 
@@ -135,7 +125,7 @@
                 } else {
                     console.error('Amount mismatch or incorrect event type.');
                 }
-            }, 10000); // Wait for 10 seconds for testing (10000 milliseconds)
+            }, 120000); // Wait for 10 minutes (600000 milliseconds)
         }
 
         // Function to close the check in Lightspeed
@@ -203,7 +193,7 @@
             if (data && typeof data === 'object') {
                 html += '<table>';
                 for (const [key, value] of Object.entries(data)) {
-                    html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                    html += `<tr><td>${key}</td><td><a href="${value}">${value}</a></td></tr>`;
                 }
                 html += '</table>';
             } else {
