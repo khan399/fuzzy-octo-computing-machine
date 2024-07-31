@@ -154,7 +154,9 @@
                     total_amount: { amount: amount } // Simulate the amount matching
                 };
 
-                console.log('Webhook Success:', webhookResponse);
+                // Log the webhook response as a table
+                console.log('Webhook Response:');
+                console.table(webhookResponse);
 
                 if (webhookResponse.event_type === 'order_captured' && parseFloat(webhookResponse.total_amount.amount) === amount) {
                     closeCheckInLightspeed();
