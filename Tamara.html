@@ -101,32 +101,33 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-                sendToWebhook(data);
+                listenForWebhook(data);
             })
             .catch(error => console.error('Error:', error));
         }
 
-        // Function to send Tamara response to webhook
-        function sendToWebhook(tamaraData) {
-            fetch('https://webhook.site/5e00543e-76e9-457b-a7ab-aa72d9bffbf3', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(tamaraData)
-            })
-            .then(response => response.json())
-            .then(data => {
+        // Function to listen for webhook response
+        function listenForWebhook(tamaraData) {
+            const eventSource = new EventSource('https://webhook.site/5e00543e-76e9-457b-a7ab-aa72d9bffbf3');
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
                 console.log('Webhook Success:', data);
-                if (data.event_type === 'order_captured' && data.total_amount.amount === amount) {
+
+                if (data.event_type === 'order_captured' && parseFloat(data.total_amount.amount) === amount) {
                     closeCheckInLightspeed();
                     sendToTerminal('Payment sent, terminal checks with the processor, and my gateway gets a response of "ACCEPTED".');
                     sendMessageToParent({ step: 'ACCEPT' });
                 } else {
                     console.error('Amount mismatch or incorrect event type.');
                 }
-            })
-            .catch(error => console.error('Webhook Error:', error));
+
+                eventSource.close();
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('Webhook Error:', error);
+                eventSource.close();
+            };
         }
 
         // Function to close the check in Lightspeed
